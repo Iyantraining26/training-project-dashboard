@@ -1,0 +1,704 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Dashboard Reporting Training Produksi</title>
+  <style>
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: Inter, Arial, sans-serif;
+      background: linear-gradient(180deg, #eff6ff 0%, #f8fbff 38%, #f8fafc 100%);
+      color: #0f172a;
+    }
+    .container { max-width: 1320px; margin: 0 auto; padding: 24px; }
+    .header {
+      display: flex; justify-content: space-between; align-items: center; gap: 16px;
+      flex-wrap: wrap; margin-bottom: 22px;
+    }
+    .title h1 { margin: 0; font-size: 34px; letter-spacing: -0.02em; }
+    .title p { margin: 8px 0 0; color: #475569; }
+    .actions { display: flex; gap: 10px; flex-wrap: wrap; }
+    input, select, textarea, button { font: inherit; }
+    .search {
+      padding: 12px 14px; border: 1px solid #bfdbfe; border-radius: 16px;
+      background: rgba(255,255,255,0.96); min-width: 300px;
+      box-shadow: 0 8px 30px rgba(37, 99, 235, 0.06);
+    }
+    .btn {
+      border: none; border-radius: 16px; padding: 12px 16px; cursor: pointer;
+      background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
+      color: white; font-weight: 600; box-shadow: 0 10px 24px rgba(37, 99, 235, 0.18);
+    }
+    .btn.secondary {
+      background: rgba(255,255,255,0.98); color: #1e3a8a; border: 1px solid #bfdbfe;
+      box-shadow: 0 8px 24px rgba(37, 99, 235, 0.08);
+    }
+    .btn.danger { background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%); box-shadow: none; }
+    .stats { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 16px; margin-bottom: 22px; }
+    .card {
+      background: rgba(255,255,255,0.94); border: 1px solid rgba(191, 219, 254, 0.92);
+      border-radius: 24px; padding: 18px; box-shadow: 0 12px 32px rgba(37, 99, 235, 0.08);
+      backdrop-filter: blur(8px);
+    }
+    .stat-label { color: #64748b; font-size: 14px; }
+    .stat-value { font-size: 28px; font-weight: 700; margin-top: 8px; }
+    .stat-sub { font-size: 13px; color: #64748b; margin-top: 6px; }
+    .tabs { display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 20px; }
+    .tab {
+      padding: 12px 18px; border-radius: 16px; border: 1px solid #bfdbfe;
+      background: rgba(255,255,255,0.9); cursor: pointer; font-weight: 600; color: #1e3a8a;
+    }
+    .tab.active {
+      background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
+      color: white; border-color: #2563eb; box-shadow: 0 12px 24px rgba(37, 99, 235, 0.2);
+    }
+    .panel { display: none; }
+    .panel.active { display: block; }
+    .panel-header {
+      display: flex; justify-content: space-between; align-items: center; gap: 16px;
+      flex-wrap: wrap; margin-bottom: 16px;
+    }
+    .panel-header h2 { margin: 0; font-size: 24px; letter-spacing: -0.02em; }
+    .panel-header p { margin: 6px 0 0; color: #64748b; font-size: 14px; }
+    .mini-stats { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 16px; margin-bottom: 16px; }
+    .progress-wrap { margin-top: 12px; height: 8px; background: #dbeafe; border-radius: 999px; overflow: hidden; }
+    .progress-bar { height: 100%; background: linear-gradient(90deg, #60a5fa 0%, #2563eb 100%); border-radius: 999px; }
+    .table-wrap {
+      overflow-x: auto; background: rgba(255,255,255,0.94);
+      border: 1px solid rgba(191, 219, 254, 0.92); border-radius: 22px;
+      box-shadow: 0 12px 32px rgba(37, 99, 235, 0.08);
+    }
+    table { width: 100%; border-collapse: collapse; min-width: 1120px; }
+    th, td {
+      padding: 14px 12px; border-bottom: 1px solid #e0ecff; text-align: left;
+      vertical-align: top; font-size: 14px;
+    }
+    th { color: #475569; font-size: 13px; background: #f8fbff; }
+    .badge { display: inline-block; padding: 6px 10px; border-radius: 999px; font-size: 12px; font-weight: 700; }
+    .green { background: #dcfce7; color: #166534; }
+    .yellow { background: #fef3c7; color: #92400e; }
+    .red { background: #fee2e2; color: #991b1b; }
+    .slate { background: #dbeafe; color: #1e40af; }
+    .modal {
+      position: fixed; inset: 0; background: rgba(15, 23, 42, 0.45); display: none;
+      justify-content: center; align-items: flex-start; padding: 40px 16px; z-index: 30; overflow-y: auto;
+    }
+    .modal.active { display: flex; }
+    .modal-card {
+      width: 100%; max-width: 760px; background: rgba(255,255,255,0.98);
+      border: 1px solid #bfdbfe; border-radius: 24px; padding: 22px;
+      box-shadow: 0 20px 40px rgba(37, 99, 235, 0.14);
+    }
+    .modal-card h3 { margin: 0 0 16px; }
+    .form-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
+    .form-grid textarea, .form-grid .full { grid-column: 1 / -1; }
+    .field { display: flex; flex-direction: column; gap: 6px; }
+    .field label { font-size: 13px; color: #475569; font-weight: 600; }
+    .field input, .field select, .field textarea {
+      border: 1px solid #bfdbfe; border-radius: 14px; padding: 11px 12px; background: white;
+    }
+    .field textarea { min-height: 90px; resize: vertical; }
+    .modal-actions { display: flex; justify-content: flex-end; gap: 10px; margin-top: 16px; flex-wrap: wrap; }
+    .section-note { color: #64748b; font-size: 14px; margin: 0 0 14px; }
+    .score-box { font-weight: 700; }
+    .overview-grid { display: grid; grid-template-columns: 1.2fr 0.8fr; gap: 16px; margin-bottom: 16px; }
+    .chart-card {
+      background: rgba(255,255,255,0.94); border: 1px solid rgba(191, 219, 254, 0.92);
+      border-radius: 22px; padding: 18px; box-shadow: 0 12px 32px rgba(37, 99, 235, 0.08);
+    }
+    .chart-card h3 { margin: 0 0 8px; font-size: 18px; }
+    .chart-card p { margin: 0 0 16px; color: #64748b; font-size: 14px; }
+    .bar-group { display: flex; flex-direction: column; gap: 12px; }
+    .bar-row { display: grid; grid-template-columns: 150px 1fr 60px; gap: 12px; align-items: center; }
+    .bar-track { height: 14px; background: #dbeafe; border-radius: 999px; overflow: hidden; }
+    .bar-fill { height: 100%; background: linear-gradient(90deg, #60a5fa 0%, #2563eb 100%); border-radius: 999px; }
+    .donut-wrap { display: flex; justify-content: center; align-items: center; padding: 4px 0 12px; }
+    .donut {
+      width: 220px; height: 220px; border-radius: 50%; position: relative;
+      background: conic-gradient(#2563eb 0deg, #2563eb 120deg, #60a5fa 120deg, #60a5fa 240deg, #93c5fd 240deg, #93c5fd 360deg);
+      box-shadow: inset 0 0 0 1px rgba(255,255,255,0.5);
+    }
+    .donut::after {
+      content: ''; position: absolute; inset: 42px; background: white; border-radius: 50%; box-shadow: inset 0 0 0 1px #dbeafe;
+    }
+    .donut-center {
+      position: absolute; inset: 0; display: flex; align-items: center; justify-content: center;
+      flex-direction: column; z-index: 1; font-weight: 700; text-align: center;
+    }
+    .legend { display: flex; flex-direction: column; gap: 10px; }
+    .legend-item { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+    .legend-left { display: flex; align-items: center; gap: 10px; }
+    .dot { width: 12px; height: 12px; border-radius: 999px; }
+    .dot.induction { background: #2563eb; }
+    .dot.request { background: #60a5fa; }
+    .dot.development { background: #93c5fd; }
+    .muted { color: #64748b; font-size: 13px; }
+    .select-status {
+      border: 1px solid #bfdbfe; border-radius: 10px; padding: 8px 10px; background: white; color: #1e3a8a;
+    }
+    @media (max-width: 980px) {
+      .stats, .mini-stats, .form-grid, .overview-grid { grid-template-columns: 1fr; }
+      .search { min-width: 100%; }
+      .title h1 { font-size: 28px; }
+      .bar-row { grid-template-columns: 1fr; gap: 6px; }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <div class="title">
+        <h1>Dashboard Reporting Training Produksi</h1>
+        <p>Dashboard minimalis modern untuk induction, training request, dan development promosi jabatan.</p>
+      </div>
+      <div class="actions">
+        <input id="globalSearch" class="search" type="text" placeholder="Cari nama, departemen, training..." />
+        <button class="btn secondary" onclick="exportData()">Export JSON</button>
+        <label class="btn secondary" style="display:inline-flex;align-items:center;gap:8px;cursor:pointer;">
+          Import JSON
+          <input id="importFile" type="file" accept="application/json" style="display:none" onchange="importData(event)" />
+        </label>
+      </div>
+    </div>
+
+    <div class="stats" id="summaryCards"></div>
+
+    <div class="tabs">
+      <button class="tab active" data-tab="overview">Dashboard Utama</button>
+      <button class="tab" data-tab="induction">Reporting Induction</button>
+      <button class="tab" data-tab="requests">Training Request</button>
+      <button class="tab" data-tab="development">Training Development</button>
+    </div>
+
+    <div id="overview" class="panel active card">
+      <div class="panel-header">
+        <div>
+          <h2>Dashboard Utama</h2>
+          <p>Ringkasan visual dari 3 program training agar cepat dibaca dalam 1 halaman.</p>
+        </div>
+      </div>
+      <div class="overview-grid">
+        <div class="chart-card">
+          <h3>Resume Pencapaian Program</h3>
+          <p>Persentase dihitung dari indikator utama tiap program.</p>
+          <div class="bar-group" id="overviewBars"></div>
+        </div>
+        <div class="chart-card">
+          <h3>Komposisi Data Training</h3>
+          <p>Perbandingan jumlah data pada 3 reporting.</p>
+          <div class="donut-wrap">
+            <div class="donut" id="overviewDonut">
+              <div class="donut-center">
+                <div style="font-size:32px" id="overviewTotal">0</div>
+                <div class="muted">Total Data</div>
+              </div>
+            </div>
+          </div>
+          <div class="legend" id="overviewLegend"></div>
+        </div>
+      </div>
+      <div class="mini-stats" id="overviewMini"></div>
+    </div>
+
+    <div id="induction" class="panel card">
+      <div class="panel-header">
+        <div>
+          <h2>Reporting Induction</h2>
+          <p>Monitoring program probation 90 hari untuk karyawan baru di divisi produksi.</p>
+        </div>
+        <button class="btn" onclick="openModal('modalInduction')">Tambah Data</button>
+      </div>
+      <div class="mini-stats" id="inductionMini"></div>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Nama</th>
+              <th>Jabatan</th>
+              <th>Hari</th>
+              <th>Mentor</th>
+              <th>Pre</th>
+              <th>Post</th>
+              <th>Behavior</th>
+              <th>Status</th>
+              <th>Edit Status</th>
+              <th>Siap Mandiri</th>
+              <th>Aksi</th>
+            </tr>
+          </thead>
+          <tbody id="inductionTable"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <div id="requests" class="panel card">
+      <div class="panel-header">
+        <div>
+          <h2>Training Request per Departemen</h2>
+          <p>Pemetaan kebutuhan training berdasarkan masalah nyata operasional produksi.</p>
+        </div>
+        <button class="btn" onclick="openModal('modalRequest')">Tambah Request</button>
+      </div>
+      <div class="mini-stats" id="requestMini"></div>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Training</th>
+              <th>Departemen</th>
+              <th>Requester</th>
+              <th>Kategori</th>
+              <th>Urgency</th>
+              <th>Status</th>
+              <th>Edit Status</th>
+              <th>Target Perubahan</th>
+              <th>Aksi</th>
+            </tr>
+          </thead>
+          <tbody id="requestTable"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <div id="development" class="panel card">
+      <div class="panel-header">
+        <div>
+          <h2>Program Training Development</h2>
+          <p>Monitoring kesiapan promosi dari Staff, SPV, Manager, hingga GM.</p>
+        </div>
+        <button class="btn" onclick="openModal('modalDevelopment')">Tambah Kandidat</button>
+      </div>
+      <p class="section-note">Promotion readiness dihitung dari Technical 30% + Behavior 30% + Leadership 40%.</p>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Nama</th>
+              <th>Current Level</th>
+              <th>Target Level</th>
+              <th>Technical</th>
+              <th>Behavior</th>
+              <th>Leadership</th>
+              <th>Readiness</th>
+              <th>Status</th>
+              <th>Edit Status</th>
+              <th>Aksi</th>
+            </tr>
+          </thead>
+          <tbody id="developmentTable"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <div class="modal" id="modalInduction">
+    <div class="modal-card">
+      <h3>Tambah Reporting Induction</h3>
+      <div class="form-grid">
+        <div class="field"><label>Nama</label><input id="ind_nama" /></div>
+        <div class="field"><label>Jabatan</label><input id="ind_jabatan" /></div>
+        <div class="field"><label>Departemen</label><input id="ind_departemen" value="Produksi" /></div>
+        <div class="field"><label>Tanggal Masuk</label><input id="ind_tanggalMasuk" type="date" /></div>
+        <div class="field"><label>Hari ke-</label><input id="ind_hariKe" type="number" /></div>
+        <div class="field"><label>Mentor</label><input id="ind_mentor" /></div>
+        <div class="field"><label>Pre Test</label><input id="ind_preTest" type="number" /></div>
+        <div class="field"><label>Post Test</label><input id="ind_postTest" type="number" /></div>
+        <div class="field"><label>SOP</label><select id="ind_sop"><option>Ya</option><option>Tidak</option></select></div>
+        <div class="field"><label>Disiplin</label><select id="ind_disiplin"><option>Ya</option><option>Tidak</option></select></div>
+        <div class="field"><label>Inisiatif</label><select id="ind_inisiatif"><option>Baik</option><option>Cukup</option><option>Kurang</option></select></div>
+        <div class="field"><label>Status Probation</label><select id="ind_statusProbation"><option>On Track</option><option>Delay</option><option>Selesai</option></select></div>
+        <div class="field"><label>Siap Kerja Mandiri</label><select id="ind_siapMandiri"><option>Ya</option><option>Tidak</option></select></div>
+        <div class="field full"><label>Catatan</label><textarea id="ind_catatan"></textarea></div>
+      </div>
+      <div class="modal-actions">
+        <button class="btn secondary" onclick="closeModal('modalInduction')">Batal</button>
+        <button class="btn" onclick="addInduction()">Simpan</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="modal" id="modalRequest">
+    <div class="modal-card">
+      <h3>Tambah Training Request</h3>
+      <div class="form-grid">
+        <div class="field"><label>Departemen</label><input id="req_departemen" value="Produksi" /></div>
+        <div class="field"><label>Requester</label><input id="req_requester" /></div>
+        <div class="field"><label>Judul Training</label><input id="req_judulTraining" /></div>
+        <div class="field"><label>Masalah</label><input id="req_masalah" /></div>
+        <div class="field"><label>Kategori</label><select id="req_kategori"><option>Mutu</option><option>Waktu</option><option>Biaya</option><option>Behavior</option></select></div>
+        <div class="field"><label>Urgency</label><select id="req_urgency"><option>High</option><option>Medium</option><option>Low</option></select></div>
+        <div class="field"><label>Target Peserta</label><input id="req_targetPeserta" type="number" /></div>
+        <div class="field"><label>Status</label><select id="req_status"><option>Pending</option><option>Approved</option><option>Rejected</option><option>Progress</option><option>Selesai</option></select></div>
+        <div class="field full"><label>Target Perubahan</label><textarea id="req_targetPerubahan"></textarea></div>
+        <div class="field full"><label>Catatan</label><textarea id="req_catatan"></textarea></div>
+      </div>
+      <div class="modal-actions">
+        <button class="btn secondary" onclick="closeModal('modalRequest')">Batal</button>
+        <button class="btn" onclick="addRequest()">Simpan</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="modal" id="modalDevelopment">
+    <div class="modal-card">
+      <h3>Tambah Kandidat Development</h3>
+      <div class="form-grid">
+        <div class="field"><label>Nama</label><input id="dev_nama" /></div>
+        <div class="field"><label>Departemen</label><input id="dev_departemen" value="Produksi" /></div>
+        <div class="field"><label>Current Level</label><select id="dev_currentLevel"><option>Staff</option><option>SPV</option><option>Manager</option><option>GM</option></select></div>
+        <div class="field"><label>Target Level</label><select id="dev_targetLevel"><option>SPV</option><option>Manager</option><option>GM</option></select></div>
+        <div class="field"><label>Technical (%)</label><input id="dev_technical" type="number" /></div>
+        <div class="field"><label>Behavior (%)</label><input id="dev_behavior" type="number" /></div>
+        <div class="field"><label>Leadership (%)</label><input id="dev_leadership" type="number" /></div>
+        <div class="field"><label>Status</label><select id="dev_status"><option>Progress</option><option>Ready</option><option>Belum</option><option>Selesai</option></select></div>
+        <div class="field full"><label>Program Development</label><textarea id="dev_program"></textarea></div>
+        <div class="field full"><label>Evidence</label><textarea id="dev_evidence"></textarea></div>
+        <div class="field full"><label>Catatan</label><textarea id="dev_catatan"></textarea></div>
+      </div>
+      <div class="modal-actions">
+        <button class="btn secondary" onclick="closeModal('modalDevelopment')">Batal</button>
+        <button class="btn" onclick="addDevelopment()">Simpan</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const STORAGE_KEY = 'training-dashboard-produksi-html-v2';
+
+    const initialData = {
+      induction: [
+        {
+          id: 'IND-001', nama: 'Budi Santoso', jabatan: 'Staff QC', departemen: 'Produksi', tanggalMasuk: '2026-03-01',
+          hariKe: 32, mentor: 'SPV Produksi A', preTest: 55, postTest: 82, sop: 'Ya', disiplin: 'Ya',
+          inisiatif: 'Cukup', statusProbation: 'On Track', siapMandiri: 'Ya', catatan: 'Sudah memahami alur inspeksi dasar dan reporting harian.'
+        }
+      ],
+      requests: [
+        {
+          id: 'REQ-001', departemen: 'Produksi', requester: 'SPV Produksi A', judulTraining: 'QC Lapangan Rumah Subsidi',
+          masalah: 'Temuan defect finishing berulang', kategori: 'Mutu', urgency: 'High', targetPeserta: 18,
+          status: 'Approved', targetPerubahan: 'Penurunan defect finishing minimal 30%', catatan: 'Prioritas untuk tim pengawas lapangan dan QC.'
+        }
+      ],
+      development: [
+        {
+          id: 'DEV-001', nama: 'Rama Pratama', currentLevel: 'Staff', targetLevel: 'SPV', departemen: 'Produksi',
+          technical: 80, behavior: 75, leadership: 60, program: 'Coaching + Genba + Weekly Assignment',
+          status: 'Progress', evidence: 'Sudah memimpin briefing kecil dan follow up defect list.',
+          catatan: 'Masih perlu penguatan pada keputusan lapangan dan ketegasan monitoring.'
+        }
+      ]
+    };
+
+    let data = loadData();
+
+    function loadData() {
+      try {
+        const saved = localStorage.getItem(STORAGE_KEY);
+        return saved ? JSON.parse(saved) : deepClone(initialData);
+      } catch (e) {
+        return deepClone(initialData);
+      }
+    }
+
+    function saveData() { localStorage.setItem(STORAGE_KEY, JSON.stringify(data)); }
+    function deepClone(obj) { return JSON.parse(JSON.stringify(obj)); }
+
+    function badgeClass(status) {
+      if (['On Track', 'Approved', 'Ready', 'Ya', 'Selesai'].includes(status)) return 'green';
+      if (['Pending', 'Progress', 'Medium', 'Cukup'].includes(status)) return 'yellow';
+      if (['Delay', 'Rejected', 'Belum', 'Tidak', 'Low'].includes(status)) return 'red';
+      return 'slate';
+    }
+
+    function scoreBadge(score) {
+      if (score >= 85) return 'green';
+      if (score >= 70) return 'yellow';
+      return 'red';
+    }
+
+    function computeReadiness(item) {
+      return Math.round((Number(item.technical || 0) * 0.3) + (Number(item.behavior || 0) * 0.3) + (Number(item.leadership || 0) * 0.4));
+    }
+
+    function getSearchValue() { return document.getElementById('globalSearch').value.trim().toLowerCase(); }
+
+    function render() {
+      renderSummaryCards();
+      renderOverview();
+      renderInduction();
+      renderRequests();
+      renderDevelopment();
+      saveData();
+    }
+
+    function renderSummaryCards() {
+      const inductionTotal = data.induction.length;
+      const inductionOnTrack = data.induction.filter(x => ['On Track','Selesai'].includes(x.statusProbation)).length;
+      const inductionAvgPost = inductionTotal ? Math.round(data.induction.reduce((a,b) => a + Number(b.postTest || 0), 0) / inductionTotal) : 0;
+      const requestTotal = data.requests.length;
+      const requestApproved = data.requests.filter(x => ['Approved','Selesai'].includes(x.status)).length;
+      const devRows = data.development.map(x => ({ ...x, readiness: computeReadiness(x) }));
+      const devAvg = devRows.length ? Math.round(devRows.reduce((a,b) => a + b.readiness, 0) / devRows.length) : 0;
+      const devReady = devRows.filter(x => x.readiness >= 85 || x.status === 'Selesai').length;
+
+      const cards = [
+        { label: 'Peserta Induction', value: inductionTotal, sub: `${inductionOnTrack} on track / selesai` },
+        { label: 'Rata-rata Post Test', value: inductionAvgPost + '%', sub: 'Efektivitas induction' },
+        { label: 'Training Request', value: requestTotal, sub: `${requestApproved} approved / selesai` },
+        { label: 'Promotion Readiness', value: devAvg + '%', sub: `${devReady} siap / selesai` }
+      ];
+
+      document.getElementById('summaryCards').innerHTML = cards.map(c => `
+        <div class="card">
+          <div class="stat-label">${c.label}</div>
+          <div class="stat-value">${c.value}</div>
+          <div class="stat-sub">${c.sub}</div>
+        </div>
+      `).join('');
+    }
+
+    function renderOverview() {
+      const inductionTotal = data.induction.length;
+      const inductionOnTrack = data.induction.filter(x => ['On Track','Selesai'].includes(x.statusProbation)).length;
+      const inductionScore = inductionTotal ? Math.round((inductionOnTrack / inductionTotal) * 100) : 0;
+
+      const requestTotal = data.requests.length;
+      const requestApproved = data.requests.filter(x => ['Approved','Selesai'].includes(x.status)).length;
+      const requestScore = requestTotal ? Math.round((requestApproved / requestTotal) * 100) : 0;
+
+      const developmentRows = data.development.map(x => ({ ...x, readiness: computeReadiness(x) }));
+      const developmentScore = developmentRows.length ? Math.round(developmentRows.reduce((a,b) => a + b.readiness, 0) / developmentRows.length) : 0;
+
+      const bars = [
+        { label: 'Induction', value: inductionScore },
+        { label: 'Training Request', value: requestScore },
+        { label: 'Development', value: developmentScore }
+      ];
+
+      document.getElementById('overviewBars').innerHTML = bars.map(item => `
+        <div class="bar-row">
+          <div><strong>${item.label}</strong></div>
+          <div class="bar-track"><div class="bar-fill" style="width:${item.value}%"></div></div>
+          <div><strong>${item.value}%</strong></div>
+        </div>
+      `).join('');
+
+      const total = inductionTotal + requestTotal + developmentRows.length;
+      const indDeg = total ? (inductionTotal / total) * 360 : 120;
+      const reqDeg = total ? (requestTotal / total) * 360 : 120;
+      document.getElementById('overviewDonut').style.background = `conic-gradient(#2563eb 0deg, #2563eb ${indDeg}deg, #60a5fa ${indDeg}deg, #60a5fa ${indDeg + reqDeg}deg, #93c5fd ${indDeg + reqDeg}deg, #93c5fd 360deg)`;
+      document.getElementById('overviewTotal').textContent = total;
+      document.getElementById('overviewLegend').innerHTML = `
+        <div class="legend-item"><div class="legend-left"><span class="dot induction"></span><span>Induction</span></div><strong>${inductionTotal}</strong></div>
+        <div class="legend-item"><div class="legend-left"><span class="dot request"></span><span>Training Request</span></div><strong>${requestTotal}</strong></div>
+        <div class="legend-item"><div class="legend-left"><span class="dot development"></span><span>Development</span></div><strong>${developmentRows.length}</strong></div>
+      `;
+
+      const siapMandiri = data.induction.filter(x => x.siapMandiri === 'Ya').length;
+      const pending = data.requests.filter(x => x.status === 'Pending').length;
+      const ready = developmentRows.filter(x => x.readiness >= 85 || x.status === 'Selesai').length;
+      document.getElementById('overviewMini').innerHTML = [
+        miniMetric('Induction Siap Mandiri', `${siapMandiri}/${inductionTotal}`, inductionTotal ? (siapMandiri / inductionTotal) * 100 : 0),
+        miniMetric('Request Pending', `${pending}/${requestTotal}`, requestTotal ? (pending / requestTotal) * 100 : 0),
+        miniMetric('Siap Promosi', `${ready}/${developmentRows.length}`, developmentRows.length ? (ready / developmentRows.length) * 100 : 0)
+      ].join('');
+    }
+
+    function renderInduction() {
+      const q = getSearchValue();
+      const rows = data.induction.filter(x => [x.nama, x.jabatan, x.departemen, x.mentor].join(' ').toLowerCase().includes(q));
+      const total = data.induction.length;
+      const onTrack = data.induction.filter(x => x.statusProbation === 'On Track').length;
+      const siap = data.induction.filter(x => x.siapMandiri === 'Ya').length;
+      const avgPost = total ? Math.round(data.induction.reduce((a,b) => a + Number(b.postTest || 0), 0) / total) : 0;
+
+      document.getElementById('inductionMini').innerHTML = [
+        miniMetric('On Track', `${onTrack}/${total}`, total ? (onTrack/total)*100 : 0),
+        miniMetric('Siap Mandiri', `${siap}/${total}`, total ? (siap/total)*100 : 0),
+        miniMetric('Avg Post Test', `${avgPost}%`, avgPost)
+      ].join('');
+
+      document.getElementById('inductionTable').innerHTML = rows.map(row => `
+        <tr>
+          <td><strong>${row.nama}</strong><br><span style="color:#64748b;font-size:12px">${row.departemen}</span></td>
+          <td>${row.jabatan}</td>
+          <td>${row.hariKe}</td>
+          <td>${row.mentor}</td>
+          <td>${row.preTest}</td>
+          <td>${row.postTest}</td>
+          <td>${row.sop}/${row.disiplin}/${row.inisiatif}</td>
+          <td><span class="badge ${badgeClass(row.statusProbation)}">${row.statusProbation}</span></td>
+          <td>${statusEditor('induction', row.id, row.statusProbation, ['On Track','Delay','Selesai'])}</td>
+          <td><span class="badge ${badgeClass(row.siapMandiri)}">${row.siapMandiri}</span></td>
+          <td><button class="btn danger" style="padding:8px 10px" onclick="deleteRow('induction','${row.id}')">Hapus</button></td>
+        </tr>
+      `).join('');
+    }
+
+    function renderRequests() {
+      const q = getSearchValue();
+      const rows = data.requests.filter(x => [x.judulTraining, x.departemen, x.masalah, x.requester].join(' ').toLowerCase().includes(q));
+      const total = data.requests.length;
+      const approved = data.requests.filter(x => x.status === 'Approved').length;
+      const high = data.requests.filter(x => x.urgency === 'High').length;
+      const selesai = data.requests.filter(x => x.status === 'Selesai').length;
+
+      document.getElementById('requestMini').innerHTML = [
+        miniMetric('Total Request', total, 100),
+        miniMetric('Approved', approved, total ? (approved/total)*100 : 0),
+        miniMetric('Selesai', selesai, total ? (selesai/total)*100 : 0)
+      ].join('');
+
+      document.getElementById('requestTable').innerHTML = rows.map(row => `
+        <tr>
+          <td><strong>${row.judulTraining}</strong><br><span style="color:#64748b;font-size:12px">${row.masalah}</span></td>
+          <td>${row.departemen}</td>
+          <td>${row.requester}</td>
+          <td>${row.kategori}</td>
+          <td><span class="badge ${badgeClass(row.urgency)}">${row.urgency}</span></td>
+          <td><span class="badge ${badgeClass(row.status)}">${row.status}</span></td>
+          <td>${statusEditor('requests', row.id, row.status, ['Pending','Approved','Rejected','Progress','Selesai'])}</td>
+          <td>${row.targetPerubahan || '-'}</td>
+          <td><button class="btn danger" style="padding:8px 10px" onclick="deleteRow('requests','${row.id}')">Hapus</button></td>
+        </tr>
+      `).join('');
+    }
+
+    function renderDevelopment() {
+      const q = getSearchValue();
+      const rows = data.development.map(x => ({ ...x, readiness: computeReadiness(x) }))
+        .filter(x => [x.nama, x.currentLevel, x.targetLevel, x.departemen].join(' ').toLowerCase().includes(q));
+
+      document.getElementById('developmentTable').innerHTML = rows.map(row => `
+        <tr>
+          <td><strong>${row.nama}</strong><br><span style="color:#64748b;font-size:12px">${row.departemen}</span></td>
+          <td>${row.currentLevel}</td>
+          <td>${row.targetLevel}</td>
+          <td>${row.technical}%</td>
+          <td>${row.behavior}%</td>
+          <td>${row.leadership}%</td>
+          <td><span class="badge ${scoreBadge(row.readiness)} score-box">${row.readiness}%</span></td>
+          <td><span class="badge ${badgeClass(row.status)}">${row.status}</span></td>
+          <td>${statusEditor('development', row.id, row.status, ['Progress','Ready','Belum','Selesai'])}</td>
+          <td><button class="btn danger" style="padding:8px 10px" onclick="deleteRow('development','${row.id}')">Hapus</button></td>
+        </tr>
+      `).join('');
+    }
+
+    function miniMetric(label, value, progress) {
+      return `
+        <div class="card" style="padding:16px;box-shadow:none;border:1px solid #dbeafe;">
+          <div class="stat-label">${label}</div>
+          <div class="stat-value" style="font-size:22px">${value}</div>
+          <div class="progress-wrap"><div class="progress-bar" style="width:${Math.max(0, Math.min(100, progress))}%"></div></div>
+        </div>
+      `;
+    }
+
+    function statusEditor(module, id, current, options) {
+      return `<select class="select-status" onchange="updateStatus('${module}','${id}', this.value)">${options.map(opt => `<option value="${opt}" ${opt === current ? 'selected' : ''}>${opt}</option>`).join('')}</select>`;
+    }
+
+    function updateStatus(module, id, value) {
+      const row = data[module].find(x => x.id === id);
+      if (!row) return;
+      if (module === 'induction') row.statusProbation = value;
+      else row.status = value;
+      render();
+    }
+
+    function deleteRow(module, id) {
+      if (!confirm('Hapus data ini?')) return;
+      data[module] = data[module].filter(x => x.id !== id);
+      render();
+    }
+
+    function openModal(id) { document.getElementById(id).classList.add('active'); }
+    function closeModal(id) { document.getElementById(id).classList.remove('active'); }
+
+    function addInduction() {
+      const row = {
+        id: 'IND-' + Date.now(), nama: val('ind_nama'), jabatan: val('ind_jabatan'), departemen: val('ind_departemen'),
+        tanggalMasuk: val('ind_tanggalMasuk'), hariKe: Number(val('ind_hariKe') || 0), mentor: val('ind_mentor'),
+        preTest: Number(val('ind_preTest') || 0), postTest: Number(val('ind_postTest') || 0), sop: val('ind_sop'),
+        disiplin: val('ind_disiplin'), inisiatif: val('ind_inisiatif'), statusProbation: val('ind_statusProbation'),
+        siapMandiri: val('ind_siapMandiri'), catatan: val('ind_catatan')
+      };
+      if (!row.nama) return alert('Nama wajib diisi.');
+      data.induction.unshift(row);
+      clearFields(['ind_nama','ind_jabatan','ind_tanggalMasuk','ind_hariKe','ind_mentor','ind_preTest','ind_postTest','ind_catatan']);
+      closeModal('modalInduction'); render();
+    }
+
+    function addRequest() {
+      const row = {
+        id: 'REQ-' + Date.now(), departemen: val('req_departemen'), requester: val('req_requester'),
+        judulTraining: val('req_judulTraining'), masalah: val('req_masalah'), kategori: val('req_kategori'),
+        urgency: val('req_urgency'), targetPeserta: Number(val('req_targetPeserta') || 0), status: val('req_status'),
+        targetPerubahan: val('req_targetPerubahan'), catatan: val('req_catatan')
+      };
+      if (!row.judulTraining) return alert('Judul training wajib diisi.');
+      data.requests.unshift(row);
+      clearFields(['req_requester','req_judulTraining','req_masalah','req_targetPeserta','req_targetPerubahan','req_catatan']);
+      closeModal('modalRequest'); render();
+    }
+
+    function addDevelopment() {
+      const row = {
+        id: 'DEV-' + Date.now(), nama: val('dev_nama'), currentLevel: val('dev_currentLevel'), targetLevel: val('dev_targetLevel'),
+        departemen: val('dev_departemen'), technical: Number(val('dev_technical') || 0), behavior: Number(val('dev_behavior') || 0),
+        leadership: Number(val('dev_leadership') || 0), program: val('dev_program'), status: val('dev_status'),
+        evidence: val('dev_evidence'), catatan: val('dev_catatan')
+      };
+      if (!row.nama) return alert('Nama wajib diisi.');
+      data.development.unshift(row);
+      clearFields(['dev_nama','dev_technical','dev_behavior','dev_leadership','dev_program','dev_evidence','dev_catatan']);
+      closeModal('modalDevelopment'); render();
+    }
+
+    function val(id) { return document.getElementById(id).value; }
+    function clearFields(ids) { ids.forEach(id => document.getElementById(id).value = ''); }
+
+    function exportData() {
+      const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url; a.download = 'training-dashboard-data.json'; a.click();
+      URL.revokeObjectURL(url);
+    }
+
+    function importData(event) {
+      const file = event.target.files[0]; if (!file) return;
+      const reader = new FileReader();
+      reader.onload = function(e) {
+        try {
+          const parsed = JSON.parse(e.target.result);
+          if (!parsed.induction || !parsed.requests || !parsed.development) { alert('Format JSON tidak sesuai.'); return; }
+          data = parsed; render(); alert('Data berhasil diimport.');
+        } catch (err) { alert('File JSON tidak valid.'); }
+      };
+      reader.readAsText(file);
+    }
+
+    document.querySelectorAll('.tab').forEach(btn => {
+      btn.addEventListener('click', () => {
+        document.querySelectorAll('.tab').forEach(x => x.classList.remove('active'));
+        document.querySelectorAll('.panel').forEach(x => x.classList.remove('active'));
+        btn.classList.add('active');
+        document.getElementById(btn.dataset.tab).classList.add('active');
+      });
+    });
+
+    document.getElementById('globalSearch').addEventListener('input', render);
+
+    window.addEventListener('click', (e) => {
+      document.querySelectorAll('.modal').forEach(modal => { if (e.target === modal) modal.classList.remove('active'); });
+    });
+
+    render();
+  </script>
+</body>
+</html>
